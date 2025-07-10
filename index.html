@@ -1,99 +1,136 @@
+from zipfile import ZipFile
+from pathlib import Path
+
+# Save the current index.html code into a file
+html_content = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>JusticeLite Demo (Mock)</title>
+  <title>JusticeLite Chat</title>
   <style>
+    * { box-sizing: border-box; }
     body {
-      font-family: Arial, sans-serif;
-      background: #f8f8f8;
-      padding: 2em;
-      max-width: 800px;
-      margin: auto;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #343541;
+      color: #ececf1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
     }
-    h1 {
-      color: #333;
+    header {
+      background-color: #202123;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+    #chatContainer {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      overflow-y: auto;
+    }
+    .chat-bubble {
+      max-width: 80%;
+      margin-bottom: 1em;
+      padding: 1em;
+      border-radius: 10px;
+      line-height: 1.5em;
+    }
+    .user { align-self: flex-end; background-color: #4b90ff; }
+    .ai { align-self: flex-start; background-color: #444654; }
+    #inputArea {
+      display: flex;
+      padding: 1rem;
+      background-color: #202123;
+      gap: 0.5rem;
     }
     textarea, select, button {
-      width: 100%;
-      padding: 1em;
-      margin-top: 1em;
-      font-size: 1em;
+      font-size: 1rem;
+      border: none;
+      border-radius: 5px;
     }
-    #responseBox {
-      background: #fff;
-      padding: 1em;
-      margin-top: 2em;
-      border-left: 5px solid #2b8dc5;
-      display: none;
+    textarea {
+      flex: 1;
+      padding: 1rem;
+      resize: none;
     }
-    .button-row button {
-      width: auto;
-      margin-right: 1em;
+    select {
+      background: #343541;
+      color: #fff;
+      padding: 0.5rem;
     }
+    button {
+      background-color: #4b90ff;
+      color: white;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+    }
+    button:hover { background-color: #3f7ee6; }
   </style>
 </head>
 <body>
-  <h1>⚖️ JusticeLite Demo</h1>
-  <label for="caseType">Select Case Type:</label>
-  <select id="caseType">
-    <option value="eviction">Wrongful Eviction</option>
-    <option value="abuse">Police Abuse / Strip Search</option>
-  </select>
-
-  <label for="caseInput">Describe Your Case:</label>
-  <textarea id="caseInput" rows="6" placeholder="E.g., I was evicted without notice despite paying rent..."></textarea>
-
-  <button onclick="generateResponse()">Submit Case</button>
-
-  <div id="responseBox">
-    <h2>✅ Verdict</h2>
-    <p id="verdict"></p>
-
-    <h3>📜 Relevant ECHR Articles</h3>
-    <ul id="articles"></ul>
-
-    <h3>💬 Reasoning</h3>
-    <p id="reasoning"></p>
-
-    <div class="button-row">
-      <button onclick="alert('PDF Download coming soon!')">📄 Download PDF</button>
-      <button onclick="alert('Human Rights viewer coming soon!')">📘 View Human Rights Info</button>
+  <header>⚖️ JusticeLite UI – Last updated: July 11, 2025</header>
+  <div id="chatContainer">
+    <div class="chat-bubble ai">
+      Hello, I’m JusticeLite. Describe your legal situation, and I’ll provide a preliminary assessment based on human rights principles.
     </div>
   </div>
-
+  <div id="inputArea">
+    <select id="caseType">
+      <option value="eviction">🏠 Wrongful Eviction</option>
+      <option value="abuse">🚓 Police Abuse</option>
+    </select>
+    <textarea id="caseInput" rows="2" placeholder="Type your case here..."></textarea>
+    <button onclick="generateResponse()">Send</button>
+  </div>
   <script>
+    const chatContainer = document.getElementById("chatContainer");
     const fakeResponses = {
       eviction: {
         verdict: "Your eviction likely violated your human rights due to lack of due process and notice.",
         articles: ["Article 8 – Right to respect for private and family life", "Article 6 – Right to a fair trial"],
-        reasoning: "Based on the facts provided, your landlord failed to provide proper notice or legal justification. Under Article 8 of the European Convention on Human Rights, individuals are entitled to protection of their home and family life."
+        reasoning: "Your landlord failed to provide proper legal notice. Article 8 of the ECHR protects the home and private life. Without legal grounds or a court ruling, the eviction likely constitutes a breach."
       },
       abuse: {
         verdict: "The police action likely amounted to degrading and unlawful treatment.",
         articles: ["Article 3 – Prohibition of torture", "Article 13 – Right to an effective remedy"],
-        reasoning: "A strip search under unclear legal basis and without urgent necessity violates Article 3. You may also not have had access to a remedy, invoking Article 13."
+        reasoning: "A forced strip search without legal justification or immediate risk violates Article 3. Absence of remedy implies breach of Article 13."
       }
     };
-
+    function appendBubble(text, sender) {
+      const bubble = document.createElement("div");
+      bubble.className = `chat-bubble ${sender}`;
+      bubble.textContent = text;
+      chatContainer.appendChild(bubble);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
     function generateResponse() {
-      const type = document.getElementById('caseType').value;
-      const userInput = document.getElementById('caseInput').value.trim();
-      const box = document.getElementById('responseBox');
-
-      if (!userInput) {
-        alert("Please describe your case before submitting.");
-        return;
-      }
-
-      const response = fakeResponses[type];
-      document.getElementById('verdict').innerText = response.verdict;
-      document.getElementById('articles').innerHTML = response.articles.map(a => `<li>${a}</li>`).join('');
-      document.getElementById('reasoning').innerText = response.reasoning;
-
-      box.style.display = 'block';
+      const type = document.getElementById("caseType").value;
+      const userText = document.getElementById("caseInput").value.trim();
+      if (!userText) return;
+      appendBubble(userText, "user");
+      document.getElementById("caseInput").value = "";
+      const res = fakeResponses[type];
+      const responseText = `✅ Verdict: ${res.verdict}\n\n📜 ECHR Articles: ${res.articles.join(", ")}\n\n💬 Reasoning: ${res.reasoning}`;
+      setTimeout(() => appendBubble(responseText, "ai"), 600);
     }
   </script>
 </body>
 </html>
-<!-- Trigger redeploy -->
+"""
+
+# Save the file locally
+file_path = Path("/mnt/data/index.html")
+file_path.write_text(html_content)
+
+# Zip the file
+zip_path = Path("/mnt/data/JusticeLite_Chat_Style.zip")
+with ZipFile(zip_path, 'w') as zipf:
+    zipf.write(file_path, arcname="index.html")
+
+zip_path.name  # Return the filename for download link
+
