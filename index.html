@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>JusticeLite Demo (Mock)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f8f8f8;
+      padding: 2em;
+      max-width: 800px;
+      margin: auto;
+    }
+    h1 {
+      color: #333;
+    }
+    textarea, select, button {
+      width: 100%;
+      padding: 1em;
+      margin-top: 1em;
+      font-size: 1em;
+    }
+    #responseBox {
+      background: #fff;
+      padding: 1em;
+      margin-top: 2em;
+      border-left: 5px solid #2b8dc5;
+      display: none;
+    }
+    .button-row button {
+      width: auto;
+      margin-right: 1em;
+    }
+  </style>
+</head>
+<body>
+  <h1>⚖️ JusticeLite Demo</h1>
+  <label for="caseType">Select Case Type:</label>
+  <select id="caseType">
+    <option value="eviction">Wrongful Eviction</option>
+    <option value="abuse">Police Abuse / Strip Search</option>
+  </select>
+
+  <label for="caseInput">Describe Your Case:</label>
+  <textarea id="caseInput" rows="6" placeholder="E.g., I was evicted without notice despite paying rent..."></textarea>
+
+  <button onclick="generateResponse()">Submit Case</button>
+
+  <div id="responseBox">
+    <h2>✅ Verdict</h2>
+    <p id="verdict"></p>
+
+    <h3>📜 Relevant ECHR Articles</h3>
+    <ul id="articles"></ul>
+
+    <h3>💬 Reasoning</h3>
+    <p id="reasoning"></p>
+
+    <div class="button-row">
+      <button onclick="alert('PDF Download coming soon!')">📄 Download PDF</button>
+      <button onclick="alert('Human Rights viewer coming soon!')">📘 View Human Rights Info</button>
+    </div>
+  </div>
+
+  <script>
+    const fakeResponses = {
+      eviction: {
+        verdict: "Your eviction likely violated your human rights due to lack of due process and notice.",
+        articles: ["Article 8 – Right to respect for private and family life", "Article 6 – Right to a fair trial"],
+        reasoning: "Based on the facts provided, your landlord failed to provide proper notice or legal justification. Under Article 8 of the European Convention on Human Rights, individuals are entitled to protection of their home and family life."
+      },
+      abuse: {
+        verdict: "The police action likely amounted to degrading and unlawful treatment.",
+        articles: ["Article 3 – Prohibition of torture", "Article 13 – Right to an effective remedy"],
+        reasoning: "A strip search under unclear legal basis and without urgent necessity violates Article 3. You may also not have had access to a remedy, invoking Article 13."
+      }
+    };
+
+    function generateResponse() {
+      const type = document.getElementById('caseType').value;
+      const userInput = document.getElementById('caseInput').value.trim();
+      const box = document.getElementById('responseBox');
+
+      if (!userInput) {
+        alert("Please describe your case before submitting.");
+        return;
+      }
+
+      const response = fakeResponses[type];
+      document.getElementById('verdict').innerText = response.verdict;
+      document.getElementById('articles').innerHTML = response.articles.map(a => `<li>${a}</li>`).join('');
+      document.getElementById('reasoning').innerText = response.reasoning;
+
+      box.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
